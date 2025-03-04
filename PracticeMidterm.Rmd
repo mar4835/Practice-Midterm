@@ -1,0 +1,103 @@
+---
+title: "Practice Midterm"
+author: "Marleny Tochihuitl-Mendoza"
+date: "2025-03-03"
+output: html_document
+---
+### Plot and Inference 
+
+```{r}
+library(fpp2)
+arrivals.ts<-arrivals[,4]
+plot(arrivals.ts, main = "Number of Arrivals in Australia from the US")
+Acf(arrivals.ts)
+```
+
+##### The plot has an increasing trend of arrivals in Australia from the United states. There seems to be some peaks at certain time periods signifying potential seasonality. In the Acf there appears to be seasonality at each quarter 4. All lags are significant signifying that past data influences the present data given the strong correlation, however, as more time passes, the significance slowly decliens.  
+
+### Central Tendency
+
+```{r}
+summary(arrivals.ts)
+boxplot(arrivals.ts, col = "lightblue")
+```
+
+##### From the boxplot it appears that the data is normally distributed as there seems to be no significant skew. 50% of arrivals in Australia from the US are betweeen 63.95(Q1) and 108.98(Q3). Only 25% of arrivals are below 63.95 and 25% are above 108.98. There are also no outliers. 
+
+### Decomposition
+
+```{r}
+ets_forecast <- ets(arrivals.ts)
+plot(ets_forecast)
+```
+
+##### Yes, the time series is seasonal. The decomposition is additive.
+
+```{r}
+decomp_arrivals <- decompose(arrivals.ts)
+plot(decomp_arrivals)
+stl_decomp <- stl(arrivals.ts, s.window = "periodic")
+plot(stl_decomp)
+```
+
+##### Seasonal quarterly indices
+
+```{r}
+seasadj(stl_decomp)
+```
+
+##### In 2011 the highest value is found in quarter 4 and the lowest value is in quarter 3. The high values may be due to people going on vacation to Australia when it is warmer, and when people have break around Christmas time. The low values in Q3 may due to Australia getting colder during this time. 
+
+```{r}
+plot(arrivals.ts, main = "Seasonally Adjusted Data vs Actual")
+lines(seasadj(stl_decomp), col = "red")
+```
+
+##### Seasonality has big fluctuations in the time series in the peaks at quarter 4 of each year, however in the other quarters, the fluctuations are much smaller when compared to the actual time series. This can mean that although seasonality plays a role for quarter 4 fluctuations, fluctuations in other quarters may be driven by the underlying trend or even noise.
+
+### Naive Method 
+
+```{r}
+naive_forecast <- naive(arrivals.ts, 4)
+plot(naive_forecast)
+# Residuals Plot
+naive_forecast$residuals
+residual_values <- as.numeric(naive_forecast$residuals)
+plot(residual_values, main = "Residuals of Naive Forecast", col = "blue", pch = 19)
+# Although some of the residuals are centered around 0, there are values in the naive forecast that are underestimated by 30 arrivals, and some that are overestimated by around 30 arrivals. The range in these residuals signifies that the naive forecast isn't accurately capturing the trend of US arrivals in Australia.
+
+# Histogram
+hist(naive_forecast$residuals)
+# The histogram shows a bell-shape, but a slight skew to the right,  suggesting that there are more positive residuals that are pulling the data. Positive residuals usually suggest that the naive forecast underestimated the data.
+
+# Fitted vs Residuals
+fitted_values <- as.numeric(naive_forecast$fitted)
+plot(fitted_values,residual_values,pch=19,col="blue")
+# The residuals appear to decrease as fitted values increase, however they are a bit scattered which may mean that the naïve forecast model is not capturing the trend that well.
+
+# Actual vs Residuals
+actual_values <- as.numeric(arrivals.ts)
+plot(actual_values, residual_values, pch = 19, col = "blue")
+# The residuals are a bit scattered. Between around 60 and a little over 100 arrivals, there seems to be a lot more error which may mean that the naïve forecast model is not capturing the trend that well.
+
+# Acf Residuals
+Acf(naive_forecast$residuals)
+# The Acf signifies seasonality at quarters 2 and 4 during each year of data given.
+
+# Five Measures of Accuracy
+accuracy(naive_forecast)
+
+# Time series value for next year. Show table and plot
+naive_forecast <- naive(arrivals.ts, 4)
+plot(naive_forecast)
+```
+
+#### Time series value for next year
+
+```{r}
+naive_forecast$mean
+naive_forecast$upper
+naive_forecast$lower
+```
+
+##### The measures of accuracy suggest that the naive model can be good as a base for quick forecasting of arrivals in Australia from the US, but it is not the best predictive model. For example, the ME suggests the naive model is slightly overpredicting values, but since it is close to 0, it is not overpredicting too much. The MAPE suggest that the forecast error is about 11.83% of the actual values, which is not that accurate. The model predicts the time series value will be 106.54 arrivals in one year. Based on the model, we can be 80% confident arrivals from the US to Australia will be between 74.47 to 138.61, and 95% confident that arrivals will be between 57.49 to 155.59 next year. 
